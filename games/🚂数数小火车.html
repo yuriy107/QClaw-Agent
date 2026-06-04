@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🚂 数数小火车</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Arial Rounded MT Bold', 'PingFang SC', 'Microsoft YaHei', 'Comic Sans MS', sans-serif;
+  background: linear-gradient(180deg, #87CEEB 0%, #B0E0FF 35%, #90EE90 65%, #7CCD7C 100%);
+  min-height: 100vh; overflow-x: hidden;
+  user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+}
+/* 云朵 */
+.clouds { position: fixed; top: 0; left: 0; width: 100%; height: 120px; pointer-events: none; z-index: 0; }
+.cloud { position: absolute; background: #fff; border-radius: 50%; opacity: 0.85; animation: floatCloud linear infinite; }
+.cloud::before, .cloud::after { content: ''; position: absolute; background: #fff; border-radius: 50%; }
+.cloud1 { width: 80px; height: 40px; top: 15px; left: 20%; animation-duration: 28s; }
+.cloud1::before { width: 35px; height: 35px; top: -20px; left: 15px; }
+.cloud1::after { width: 25px; height: 25px; top: -10px; left: 45px; }
+.cloud2 { width: 100px; height: 45px; top: 45px; left: 55%; animation-duration: 33s; }
+.cloud2::before { width: 40px; height: 40px; top: -22px; left: 20px; }
+.cloud2::after { width: 30px; height: 30px; top: -12px; left: 55px; }
+.cloud3 { width: 70px; height: 35px; top: 25px; left: 80%; animation-duration: 22s; }
+.cloud3::before { width: 30px; height: 30px; top: -18px; left: 12px; }
+.cloud3::after { width: 22px; height: 22px; top: -8px; left: 40px; }
+@keyframes floatCloud { 0% { transform: translateX(0); } 100% { transform: translateX(-130vw); } }
+
+.container {
+  position: relative; z-index: 1; max-width: 900px; margin: 0 auto;
+  padding: 8px 15px; display: flex; flex-direction: column; align-items: center;
+  min-height: 100vh; justify-content: center;
+}
+
+.header { text-align: center; margin-bottom: 6px; }
+.title {
+  font-size: 2.2em; font-weight: 900; color: #FF6B35;
+  text-shadow: 3px 3px 0 #FFD700, -1px -1px 0 #FFF; letter-spacing: 3px;
+}
+.level-info { font-size: 1.05em; color: #5D4037; margin-top: 2px; font-weight: bold; }
+.level-info span { color: #FF6B35; font-size: 1.25em; }
+
+.progress-wrap {
+  width: 100%; max-width: 600px; height: 16px;
+  background: rgba(255,255,255,0.55); border-radius: 8px; margin-bottom: 8px;
+  overflow: hidden; border: 2px solid #FFB74D;
+}
+.progress-bar {
+  height: 100%; background: linear-gradient(90deg, #FFD54F, #FF9800, #F44336);
+  border-radius: 6px; transition: width 0.5s ease;
+  display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+  font-size: 10px; color: #fff; font-weight: bold; min-width: 36px;
+}
+
+.scene {
+  width: 100%; max-width: 850px; position: relative;
+  background: linear-gradient(0deg, #A5D6A7 0%, #C8E6C9 25%, #E8F5E9 55%, #FFF9C4 82%);
+  border-radius: 28px; padding: 10px 0 54px 0;
+  border: 5px solid #81C784; box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  overflow: hidden; height: 300px;
+}
+.scene::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 44px;
+  background: linear-gradient(0deg, #66BB6A 0%, #81C784 8px, transparent 8px);
+  border-radius: 0 0 22px 22px; z-index: 2;
+}
+.rail {
+  position: absolute; bottom: 50px; left: 0; right: 0; height: 6px; z-index: 1;
+  background: repeating-linear-gradient(90deg, #795548 0px, #795548 24px, #8D6E63 24px, #8D6E63 28px);
+  border-radius: 3px;
+}
+.rail::after {
+  content: ''; position: absolute; bottom: -10px; left: 0; right: 0; height: 5px;
+  background: repeating-linear-gradient(90deg, #A1887F 0px, #A1887F 28px, #BCAAA4 28px, #BCAAA4 38px);
+  border-radius: 2px;
+}
+
+.train-wrap {
+  position: absolute; bottom: 58px; left: 0;
+  display: flex; align-items: flex-end;
+  transition: left 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap; z-index: 1; will-change: left;
+}
+.engine { width: 90px; height: 82px; position: relative; flex-shrink: 0; }
+.engine-body {
+  position: absolute; bottom: 10px; left: 3px;
+  width: 78px; height: 58px; background: linear-gradient(135deg, #F44336, #D32F2F);
+  border-radius: 14px 14px 7px 7px; border: 4px solid #B71C1C;
+}
+.engine-face {
+  position: absolute; top: 5px; left: 18px; width: 24px; height: 24px;
+  background: #81D4FA; border-radius: 50%; border: 3px solid #B71C1C;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+}
+.engine-smokestack {
+  position: absolute; top: -20px; left: 50px;
+  width: 18px; height: 26px; background: #424242; border-radius: 4px 4px 0 0;
+}
+.smoke { position: absolute; top: -26px; font-size: 18px; }
+.smoke1 { left: -2px; animation: puffUp 1.5s ease-out infinite; }
+.smoke2 { left: 8px; animation: puffUp 1.5s ease-out 0.5s infinite; }
+.smoke3 { left: 0px; animation: puffUp 1.5s ease-out 1s infinite; }
+@keyframes puffUp {
+  0% { opacity: 0.6; transform: translateY(0) scale(0.4); }
+  100% { opacity: 0; transform: translateY(-32px) scale(1.4); }
+}
+.engine-wheel {
+  position: absolute; bottom: 2px; width: 20px; height: 20px;
+  background: #37474F; border-radius: 50%; border: 3px solid #607D8B;
+  animation: spinWheel 0.6s linear infinite;
+}
+.engine-wheel1 { left: 10px; } .engine-wheel2 { left: 46px; }
+@keyframes spinWheel { to { transform: rotate(360deg); } }
+.engine-cowcatcher {
+  position: absolute; bottom: 10px; left: -6px;
+  border-left: 15px solid transparent; border-bottom: 18px solid #FFB74D;
+}
+
+.carriage { width: 66px; height: 72px; flex-shrink: 0; position: relative; }
+.carriage-body {
+  position: absolute; bottom: 10px; left: 2px;
+  width: 60px; height: 52px; border-radius: 10px 10px 5px 5px; border: 4px solid;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 900; color: #fff;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+}
+.carriage-body.c1 { background: linear-gradient(135deg, #FF7043, #F4511E); border-color: #BF360C; }
+.carriage-body.c2 { background: linear-gradient(135deg, #42A5F5, #1E88E5); border-color: #0D47A1; }
+.carriage-body.c3 { background: linear-gradient(135deg, #66BB6A, #43A047); border-color: #1B5E20; }
+.carriage-body.c4 { background: linear-gradient(135deg, #FFEE58, #FDD835); border-color: #F57F17; color: #5D4037; text-shadow: none; }
+.carriage-body.c5 { background: linear-gradient(135deg, #AB47BC, #8E24AA); border-color: #4A148C; }
+.carriage-body.missing {
+  background: linear-gradient(135deg, #E0E0E0, #BDBDBD) !important;
+  border-color: #9E9E9E !important; color: #FF6B35 !important;
+  text-shadow: none !important; animation: wiggle 1.8s infinite;
+}
+@keyframes wiggle {
+  0%,100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+.carriage-wheel {
+  position: absolute; bottom: 2px; width: 16px; height: 16px;
+  background: #37474F; border-radius: 50%; border: 2px solid #607D8B;
+  animation: spinWheel 0.8s linear infinite;
+}
+.carriage-wheel1 { left: 7px; } .carriage-wheel2 { left: 37px; }
+.connector {
+  position: absolute; bottom: 36px; left: -5px;
+  width: 10px; height: 5px; background: #5D4037; border-radius: 2px;
+}
+
+.input-zone {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin: 8px 0; flex-wrap: wrap;
+}
+.input-box {
+  width: 130px; height: 64px; font-size: 38px; text-align: center; font-weight: 900;
+  border: 6px solid #FFB74D; border-radius: 18px; background: #fff;
+  color: #FF6B35; outline: none; caret-color: #FF6B35;
+  -webkit-appearance: none; appearance: none;
+}
+.input-box:focus { border-color: #FF6B35; box-shadow: 0 0 18px rgba(255,107,53,0.4); }
+.input-box.correct { border-color: #4CAF50; background: #E8F5E9; animation: popIn 0.4s ease; }
+.input-box.wrong { border-color: #F44336; background: #FFEBEE; animation: shake 0.4s ease; }
+@keyframes popIn {
+  0% { transform: scale(1); } 50% { transform: scale(1.18); } 100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); } 75% { transform: translateX(8px); }
+}
+
+.btn {
+  width: 64px; height: 64px; border-radius: 50%; font-size: 30px; font-weight: 900;
+  border: none; cursor: pointer; transition: transform 0.12s;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.12); }
+.btn-go { background: linear-gradient(135deg, #FF9800, #F57C00); color: #fff; font-size: 32px; }
+
+.hint-area { text-align: center; min-height: 36px; }
+.hint-text {
+  font-size: 1.15em; font-weight: bold; color: #5D4037;
+  display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+
+.stars-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+.star {
+  position: absolute; font-size: 28px; animation: starFall 2s ease-out forwards;
+}
+@keyframes starFall {
+  0% { opacity: 1; transform: translateY(0) scale(0.3) rotate(0deg); }
+  50% { opacity: 1; transform: translateY(-35px) scale(1.15) rotate(180deg); }
+  100% { opacity: 0; transform: translateY(-70px) scale(0.1) rotate(360deg); }
+}
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: none; align-items: center; justify-content: center; z-index: 200;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: #fff; border-radius: 28px; padding: 28px 22px; text-align: center;
+  max-width: 400px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  animation: bounceIn 0.6s ease;
+}
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.modal-emoji { font-size: 72px; display: block; margin-bottom: 8px; }
+.modal h2 { font-size: 1.8em; color: #FF6B35; margin-bottom: 6px; }
+.modal p { font-size: 1.05em; color: #666; margin-bottom: 18px; line-height: 1.6; }
+.modal .stars-row { font-size: 36px; margin-bottom: 12px; }
+.btn-replay {
+  background: linear-gradient(135deg, #FF6B35, #F4511E); color: #fff;
+  font-size: 1.2em; font-weight: bold; padding: 12px 36px;
+  border: none; border-radius: 24px; cursor: pointer;
+  box-shadow: 0 6px 0 #BF360C; transition: transform 0.12s;
+}
+.btn-replay:active { transform: translateY(4px); box-shadow: 0 2px 0 #BF360C; }
+
+.confetti {
+  position: fixed; pointer-events: none; z-index: 300;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+}
+
+@media (max-width: 500px) {
+  .title { font-size: 1.5em; }
+  .scene { height: 240px; }
+  .engine { width: 64px; height: 60px; }
+  .engine-body { width: 56px; height: 42px; }
+  .engine-smokestack { width: 13px; height: 20px; top: -16px; left: 36px; }
+  .engine-cowcatcher { border-left-width: 10px; border-bottom-width: 13px; }
+  .carriage { width: 48px; height: 54px; }
+  .carriage-body { width: 44px; height: 38px; font-size: 18px; }
+  .carriage-wheel { width: 12px; height: 12px; }
+  .carriage-wheel1 { left: 5px; } .carriage-wheel2 { left: 27px; }
+  .connector { bottom: 28px; left: -3px; width: 7px; height: 4px; }
+  .engine-wheel { width: 14px; height: 14px; }
+  .engine-wheel1 { left: 7px; } .engine-wheel2 { left: 32px; }
+  .input-box { width: 100px; height: 52px; font-size: 28px; }
+  .btn { width: 52px; height: 52px; font-size: 24px; }
+  .btn-go { font-size: 28px; }
+  .scene { border-radius: 20px; border-width: 4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="clouds">
+  <div class="cloud cloud1"></div>
+  <div class="cloud cloud2"></div>
+  <div class="cloud cloud3"></div>
+</div>
+
+<div class="stars-container" id="starsContainer"></div>
+
+<div class="container">
+  <div class="header">
+    <div class="title">🚂 数数小火车</div>
+    <div class="level-info">第 <span id="levelDisplay">1</span> / <span id="totalLevels">25</span> 关</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="rail"></div>
+    <div class="train-wrap" id="trainWrap"></div>
+  </div>
+
+  <div class="hint-area">
+    <div class="hint-text" id="hintText">
+      🔍 找到车厢里 <span style="color:#FF6B35;font-size:1.2em">？</span> 的数字，填上去吧！
+    </div>
+  </div>
+
+  <div class="input-zone">
+    <input type="tel" class="input-box" id="answerInput" maxlength="3" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="?">
+    <button class="btn btn-go" id="btnGo" title="出发！">✅</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <span class="modal-emoji">🏆</span>
+    <h2>闯关成功！</h2>
+    <div class="stars-row">🌟🌟🌟🌟🌟</div>
+    <p id="modalMsg">太棒了！你是数数小冠军！</p>
+    <button class="btn-replay" id="btnReplay">🔄 再玩一次</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  var audioCtx = null;
+  function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  function beep(freq, dur, type, vol) {
+    if (!audioCtx) return;
+    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.14, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + dur);
+  }
+  function sfxCorrect() { beep(523,0.12); setTimeout(function(){ beep(659,0.12); },120); setTimeout(function(){ beep(784,0.22); },240); }
+  function sfxWrong() { beep(200,0.28,'square',0.07); }
+  function sfxClick() { beep(600,0.05,'sine',0.06); }
+  function sfxWin() { [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ beep(f,0.25,'triangle',0.16); }, i*150); }); }
+
+  var TOTAL_LEVELS = 25, TRAIN_LENGTH = 5;
+  function getLevelRange(lv) {
+    if (lv <= 5) return {min:1,max:10};
+    if (lv <= 10) return {min:1,max:20};
+    if (lv <= 15) return {min:1,max:50};
+    return {min:1,max:100};
+  }
+
+  var currentLevel = 1, currentNumbers = [], missingIndex = 0, missingValue = 0;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var trainWrap = $('trainWrap'), answerInput = $('answerInput'),
+      btnGo = $('btnGo'), hintText = $('hintText'),
+      levelDisplay = $('levelDisplay'), totalLevelsEl = $('totalLevels'),
+      progressBar = $('progressBar'), starsContainer = $('starsContainer'),
+      modalOverlay = $('modalOverlay'), modalMsg = $('modalMsg'), sceneEl = $('scene');
+  totalLevelsEl.textContent = TOTAL_LEVELS;
+
+  function generatePuzzle() {
+    var range = getLevelRange(currentLevel);
+    var starts = [];
+    for (var s = range.min; s <= range.max - TRAIN_LENGTH + 1; s++) starts.push(s);
+    var start = starts[Math.floor(Math.random() * starts.length)];
+    currentNumbers = [];
+    for (var i = 0; i < TRAIN_LENGTH; i++) currentNumbers.push(start + i);
+    missingIndex = Math.floor(Math.random() * TRAIN_LENGTH);
+    missingValue = currentNumbers[missingIndex];
+  }
+
+  var carriageColors = ['c1','c2','c3','c4','c5'];
+
+  function getTrainPixelWidth() {
+    var isMobile = window.innerWidth <= 500;
+    return (isMobile ? 64 : 90) + TRAIN_LENGTH * (isMobile ? 48 : 66);
+  }
+
+  function renderTrain() {
+    trainWrap.innerHTML = '';
+    var engine = document.createElement('div'); engine.className = 'engine';
+    engine.innerHTML = '<div class="engine-smokestack"></div>'
+      + '<div class="smoke smoke1">💨</div><div class="smoke smoke2">💨</div><div class="smoke smoke3">💨</div>'
+      + '<div class="engine-body"><div class="engine-face">😊</div></div>'
+      + '<div class="engine-wheel engine-wheel1"></div><div class="engine-wheel engine-wheel2"></div>'
+      + '<div class="engine-cowcatcher"></div>';
+    trainWrap.appendChild(engine);
+
+    for (var i = 0; i < TRAIN_LENGTH; i++) {
+      var car = document.createElement('div'); car.className = 'carriage';
+      var bodyClass = i === missingIndex ? 'missing' : carriageColors[i % carriageColors.length];
+      var num = i === missingIndex ? '?' : currentNumbers[i];
+      car.innerHTML = '<div class="connector"></div>'
+        + '<div class="carriage-body ' + bodyClass + '">' + num + '</div>'
+        + '<div class="carriage-wheel carriage-wheel1"></div>'
+        + '<div class="carriage-wheel carriage-wheel2"></div>';
+      trainWrap.appendChild(car);
+    }
+
+    requestAnimationFrame(function() { updateTrainPosition(); });
+  }
+
+  function updateTrainPosition() {
+    var sceneWidth = sceneEl.clientWidth;
+    var trainWidth = trainWrap.scrollWidth || getTrainPixelWidth();
+    var margin = 8;
+    var maxOffset = Math.max(0, sceneWidth - trainWidth - margin * 2);
+    var progress = (currentLevel - 1) / (TOTAL_LEVELS - 1);
+    var offset = Math.round(progress * maxOffset) + margin;
+    offset = Math.max(margin, Math.min(margin + maxOffset, offset));
+    trainWrap.style.left = offset + 'px';
+  }
+
+  function updateUI() {
+    levelDisplay.textContent = currentLevel;
+    var pct = Math.round(((currentLevel - 1) / (TOTAL_LEVELS - 1)) * 100);
+    progressBar.style.width = pct + '%';
+    progressBar.textContent = pct > 8 ? pct + '%' : '';
+    var range = getLevelRange(currentLevel);
+    hintText.innerHTML = '🔍 范围：<strong>' + range.min + ' ~ ' + range.max + '</strong> ｜找到 <span style="color:#FF6B35;font-size:1.2em">?</span> 的数字吧！';
+  }
+
+  function showStars(x, y) {
+    var emojis = ['⭐','🌟','✨','💫','🎉'];
+    for (var i = 0; i < 8; i++) {
+      var s = document.createElement('div'); s.className = 'star';
+      s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      s.style.left = (x + (Math.random() - 0.5) * 100) + 'px';
+      s.style.top = (y + (Math.random() - 0.5) * 50) + 'px';
+      s.style.animationDuration = (1 + Math.random() * 1.5) + 's';
+      s.style.fontSize = (22 + Math.random() * 18) + 'px';
+      starsContainer.appendChild(s);
+      setTimeout(function(){ s.remove(); }, 2500);
+    }
+  }
+
+  function showConfetti() {
+    var colors = ['#FF6B35','#FFD700','#4CAF50','#2196F3','#E91E63','#9C27B0','#FF9800','#00BCD4'];
+    for (var i = 0; i < 60; i++) {
+      var c = document.createElement('div'); c.className = 'confetti';
+      c.style.left = Math.random() * 100 + '%';
+      c.style.top = -(Math.random() * 35) + 'px';
+      c.style.width = (7 + Math.random() * 12) + 'px';
+      c.style.height = (7 + Math.random() * 12) + 'px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '3px';
+      c.style.animationDuration = (2 + Math.random() * 3) + 's';
+      c.style.animationDelay = Math.random() * 0.7 + 's';
+      document.body.appendChild(c);
+      setTimeout(function(){ c.remove(); }, 4000);
+    }
+  }
+
+  function handleCorrect() {
+    sfxCorrect();
+    answerInput.classList.add('correct');
+    var rect = answerInput.getBoundingClientRect();
+    showStars(rect.left + rect.width/2, rect.top);
+    hintText.innerHTML = '🎉 太棒了！<strong>' + missingValue + '</strong> 答对啦！';
+    var bodies = trainWrap.querySelectorAll('.carriage-body.missing');
+    if (bodies.length > 0) {
+      bodies[0].textContent = missingValue;
+      bodies[0].classList.remove('missing');
+      bodies[0].classList.add(carriageColors[missingIndex % carriageColors.length]);
+    }
+    setTimeout(function() {
+      answerInput.classList.remove('correct');
+      answerInput.value = '';
+      currentLevel++;
+      if (currentLevel > TOTAL_LEVELS) { winGame(); }
+      else { generatePuzzle(); renderTrain(); updateUI(); answerInput.focus(); }
+    }, 1000);
+  }
+
+  function handleWrong() {
+    sfxWrong();
+    answerInput.classList.add('wrong');
+    hintText.innerHTML = '🤔 不对哦，再想想！💪';
+    setTimeout(function() { answerInput.classList.remove('wrong'); answerInput.value = ''; answerInput.focus(); }, 800);
+  }
+
+  function winGame() {
+    sfxWin();
+    showConfetti();
+    modalMsg.textContent = '你通过了全部 ' + TOTAL_LEVELS + ' 关！\n从 1 数到 100 全都会了！\n你是数数小冠军！🏆';
+    modalOverlay.classList.add('show');
+    updateTrainPosition();
+    hintText.innerHTML = '🏆 闯关成功！你是最棒的！🌟';
+    progressBar.style.width = '100%';
+    progressBar.textContent = '100%';
+  }
+
+  btnGo.addEventListener('click', function() {
+    initAudio(); sfxClick();
+    var ans = parseInt(answerInput.value, 10);
+    if (isNaN(ans)) { hintText.innerHTML = '📝 请在框里输入数字哦~'; answerInput.focus(); return; }
+    ans === missingValue ? handleCorrect() : handleWrong();
+  });
+
+  answerInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      initAudio(); sfxClick();
+      var ans = parseInt(answerInput.value, 10);
+      if (isNaN(ans)) { hintText.innerHTML = '📝 请在框里输入数字哦~'; answerInput.focus(); return; }
+      ans === missingValue ? handleCorrect() : handleWrong();
+    }
+  });
+
+  answerInput.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
+
+  $('btnReplay').addEventListener('click', function() {
+    initAudio(); sfxClick();
+    modalOverlay.classList.remove('show');
+    currentLevel = 1; answerInput.value = '';
+    generatePuzzle(); renderTrain(); updateUI(); answerInput.focus();
+  });
+
+  var resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() { updateTrainPosition(); }, 200);
+  });
+
+  document.addEventListener('click', initAudio, { once: true });
+
+  generatePuzzle();
+  renderTrain();
+  updateUI();
+  console.log('🚂 数数小火车 v2 就绪！共 ' + TOTAL_LEVELS + ' 关');
+})();
+</script>
+</body>
+</html>

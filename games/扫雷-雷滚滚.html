@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💣 雷滚滚</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 95vw;
+            max-height: 95vh;
+            overflow: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+        }
+
+        .info-item {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .level-display {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .best-record {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #e65100;
+            font-weight: bold;
+        }
+
+        .best-record span {
+            color: #d32f2f;
+            font-size: 1.2em;
+        }
+
+        .game-board {
+            display: block;
+            background: #c3cfe2;
+            padding: 10px;
+            border-radius: 12px;
+            margin: 0 auto;
+            width: fit-content;
+        }
+
+        .game-row {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 2px;
+        }
+
+        .game-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .cell {
+            border: 2px solid #b0b8c4;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(145deg, #d4d8dc, #c0c4c8);
+            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15), inset 1px 1px 2px rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .cell:hover {
+            background: linear-gradient(145deg, #e0e4e8, #ccd0d4);
+        }
+
+        .cell:active {
+            transform: scale(0.95);
+        }
+
+        .cell.revealed {
+            background: linear-gradient(145deg, #e8edf2, #d0d7e0) !important;
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.12), inset -1px -1px 3px rgba(255, 255, 255, 0.5);
+            border: 1px solid #c0c8d2;
+            color: #333;
+            text-shadow: none;
+            cursor: default;
+        }
+
+        .cell.mine {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a6f) !important;
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell.flagged {
+            background: linear-gradient(145deg, #ffd93d, #ffb347) !important;
+            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15), inset 1px 1px 2px rgba(255, 255, 255, 0.4);
+        }
+
+        .number-1 { color: #1565c0; }
+        .number-2 { color: #2e7d32; }
+        .number-3 { color: #c62828; }
+        .number-4 { color: #0277bd; }
+        .number-5 { color: #e65100; }
+        .number-6 { color: #00695c; }
+        .number-7 { color: #212121; }
+        .number-8 { color: #6a1b9a; }
+
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .control-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .restart-btn { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .restart-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4); }
+        .hint-btn { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .hint-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4); }
+        .level-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .level-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-content h2 { color: #667eea; margin-bottom: 20px; font-size: 2em; }
+        .modal-content p { font-size: 1.2em; margin-bottom: 15px; color: #555; }
+        .modal-content .new-record { color: #d32f2f; font-weight: bold; font-size: 1.3em; }
+
+        .modal-btn {
+            padding: 12px 40px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+
+        .modal-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6); }
+
+        .instructions {
+            margin-top: 15px;
+            padding: 12px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            text-align: center;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .instructions strong { color: #667eea; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); box-shadow: 0 0 20px rgba(102, 126, 234, 0.8); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>💣 雷滚滚</h1>
+
+        <div class="level-display" id="level-display">第1关</div>
+        <div class="best-record" id="best-record">🏆 最高记录: <span>--</span> 秒</div>
+
+        <div class="game-info">
+            <div class="info-item">💣 剩余: <span id="mines-count">8</span></div>
+            <div class="info-item">⏱️ 时间: <span id="timer">0</span>秒</div>
+            <div class="info-item">😊 标记: <span id="flags-count">0</span></div>
+        </div>
+
+        <div id="game-board" class="game-board"></div>
+
+        <div class="control-panel">
+            <button class="control-btn level-btn" id="prev-level-btn">⬅️ 上一关</button>
+            <button class="control-btn restart-btn" id="restart-btn">🔄 重新开始</button>
+            <button class="control-btn hint-btn" id="hint-btn">💡 提示</button>
+            <button class="control-btn level-btn" id="next-level-btn-2">下一关 ➡️</button>
+        </div>
+
+        <div class="instructions">
+            <strong>游戏说明:</strong> 左键点击打开格子 | 右键点击标记/取消地雷😊 | 数字表示周围地雷数 | 打开所有安全格即可获胜！
+        </div>
+    </div>
+
+    <div class="modal" id="win-modal">
+        <div class="modal-content">
+            <h2>🎉 恭喜通关！</h2>
+            <p>你成功完成了<span id="win-level"></span>！</p>
+            <p>用时: <span id="win-time"></span> 秒</p>
+            <p id="new-record" class="new-record" style="display:none">🏆 新纪录！</p>
+            <p id="best-record-info"></p>
+            <button class="modal-btn" id="next-level-btn">下一关 ➡️</button>
+        </div>
+    </div>
+
+    <div class="modal" id="lose-modal">
+        <div class="modal-content">
+            <h2>💥 踩雷了！</h2>
+            <p>地雷爆炸！</p>
+            <p><span id="lose-level"></span> 失败</p>
+            <button class="modal-btn" id="retry-btn">🔄 重新挑战</button>
+        </div>
+    </div>
+
+    <script>
+        var LEVELS = [
+            { rows: 9,  cols: 9,  mines: 8  },
+            { rows: 9,  cols: 9,  mines: 12 },
+            { rows: 10, cols: 10, mines: 15 },
+            { rows: 10, cols: 10, mines: 18 },
+            { rows: 11, cols: 11, mines: 22 },
+            { rows: 12, cols: 12, mines: 26 },
+            { rows: 13, cols: 13, mines: 30 },
+            { rows: 14, cols: 14, mines: 35 },
+            { rows: 15, cols: 15, mines: 40 },
+            { rows: 16, cols: 16, mines: 45 }
+        ];
+
+        var currentLevel = 0;
+        var board = [];
+        var revealed = [];
+        var flagged = [];
+        var gameOver = false;
+        var gameStarted = false;
+        var timer = 0;
+        var timerInterval = null;
+        var totalMines = 8;
+        var flagsPlaced = 0;
+        var cellSize = 40;
+
+        var gameBoard = document.getElementById('game-board');
+        var minesCountEl = document.getElementById('mines-count');
+        var flagsCountEl = document.getElementById('flags-count');
+        var timerEl = document.getElementById('timer');
+        var levelDisplay = document.getElementById('level-display');
+        var bestRecordEl = document.getElementById('best-record');
+        var restartBtn = document.getElementById('restart-btn');
+        var hintBtn = document.getElementById('hint-btn');
+        var winModal = document.getElementById('win-modal');
+        var loseModal = document.getElementById('lose-modal');
+        var winLevelEl = document.getElementById('win-level');
+        var winTimeEl = document.getElementById('win-time');
+        var newRecordEl = document.getElementById('new-record');
+        var bestRecordInfoEl = document.getElementById('best-record-info');
+        var loseLevelEl = document.getElementById('lose-level');
+        var nextLevelBtn = document.getElementById('next-level-btn');
+        var nextLevelBtn2 = document.getElementById('next-level-btn-2');
+        var prevLevelBtn = document.getElementById('prev-level-btn');
+        var retryBtn = document.getElementById('retry-btn');
+
+        function setCookie(name, value, days) {
+            var expires = '';
+            if (days) {
+                var date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = '; expires=' + date.toUTCString();
+            }
+            document.cookie = name + '=' + encodeURIComponent(value) + expires + '; path=/';
+        }
+
+        function getCookie(name) {
+            var nameEQ = name + '=';
+            var ca = document.cookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) {
+                    return decodeURIComponent(c.substring(nameEQ.length, c.length));
+                }
+            }
+            return null;
+        }
+
+        function saveRecord(level, time) {
+            setCookie('lg_level_' + level, time, 365);
+        }
+
+        function loadRecord(level) {
+            var val = getCookie('lg_level_' + level);
+            if (val !== null) {
+                var num = parseInt(val, 10);
+                return isNaN(num) ? null : num;
+            }
+            return null;
+        }
+
+        function updateBestRecordDisplay() {
+            var best = loadRecord(currentLevel);
+            bestRecordEl.innerHTML = '🏆 最高记录: <span>' + (best !== null ? best : '--') + '</span> 秒';
+        }
+
+        function checkAndUpdateRecord(time) {
+            var currentBest = loadRecord(currentLevel);
+            if (currentBest === null || time < currentBest) {
+                saveRecord(currentLevel, time);
+                return true;
+            }
+            return false;
+        }
+
+        function calculateCellSize() {
+            var config = LEVELS[currentLevel];
+            var container = document.querySelector('.game-container');
+            var containerWidth = container.clientWidth - 80;
+            var viewportHeight = window.innerHeight;
+            var totalFixedHeight = 350;
+            var availableHeight = viewportHeight - totalFixedHeight;
+
+            var maxCellWidth = Math.floor(containerWidth / config.cols);
+            var maxCellHeight = Math.floor(availableHeight / config.rows);
+            cellSize = Math.min(maxCellWidth, maxCellHeight, 50);
+            cellSize = Math.max(cellSize, 28);
+        }
+
+        function initGame(level) {
+            currentLevel = level;
+            var config = LEVELS[level];
+            totalMines = config.mines;
+            flagsPlaced = 0;
+            gameOver = false;
+            gameStarted = false;
+            timer = 0;
+
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            timerEl.textContent = '0';
+            levelDisplay.textContent = '第' + (level + 1) + '关';
+            minesCountEl.textContent = totalMines;
+            flagsCountEl.textContent = flagsPlaced;
+
+            updateBestRecordDisplay();
+
+            board = createBoard(config.rows, config.cols, config.mines);
+            
+            revealed = [];
+            flagged = [];
+            for (var i = 0; i < config.rows; i++) {
+                revealed[i] = [];
+                flagged[i] = [];
+                for (var j = 0; j < config.cols; j++) {
+                    revealed[i][j] = false;
+                    flagged[i][j] = false;
+                }
+            }
+
+            calculateCellSize();
+            renderBoard();
+        }
+
+        function createBoard(rows, cols, mines) {
+            var b = [];
+            for (var i = 0; i < rows; i++) {
+                b[i] = [];
+                for (var j = 0; j < cols; j++) {
+                    b[i][j] = 0;
+                }
+            }
+            var placed = 0;
+            while (placed < mines) {
+                var r = Math.floor(Math.random() * rows);
+                var c = Math.floor(Math.random() * cols);
+                if (b[r][c] !== 'M') {
+                    b[r][c] = 'M';
+                    placed++;
+                    for (var dr = -1; dr <= 1; dr++) {
+                        for (var dc = -1; dc <= 1; dc++) {
+                            var nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && b[nr][nc] !== 'M') {
+                                b[nr][nc]++;
+                            }
+                        }
+                    }
+                }
+            }
+            return b;
+        }
+
+        function renderBoard() {
+            var config = LEVELS[currentLevel];
+            
+            gameBoard.innerHTML = '';
+            
+            var fontSize = Math.max(Math.floor(cellSize * 0.45), 12);
+            var emojiSize = Math.max(Math.floor(cellSize * 0.5), 14);
+
+            for (var r = 0; r < config.rows; r++) {
+                var rowDiv = document.createElement('div');
+                rowDiv.className = 'game-row';
+                
+                for (var c = 0; c < config.cols; c++) {
+                    var cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.style.width = cellSize + 'px';
+                    cell.style.height = cellSize + 'px';
+                    cell.style.fontSize = fontSize + 'px';
+                    cell.style.lineHeight = cellSize + 'px';
+                    cell.setAttribute('data-row', r);
+                    cell.setAttribute('data-col', c);
+
+                    if (revealed[r][c]) {
+                        cell.classList.add('revealed');
+                        if (board[r][c] === 'M') {
+                            cell.classList.add('mine');
+                            cell.textContent = '💣';
+                            cell.style.fontSize = emojiSize + 'px';
+                        } else if (board[r][c] > 0) {
+                            cell.textContent = board[r][c];
+                            cell.classList.add('number-' + board[r][c]);
+                        }
+                    } else if (flagged[r][c]) {
+                        cell.classList.add('flagged');
+                        cell.textContent = '😊';
+                        cell.style.fontSize = emojiSize + 'px';
+                    }
+
+                    cell.onclick = (function(row, col) {
+                        return function(e) {
+                            e.preventDefault();
+                            handleClick(row, col);
+                        };
+                    })(r, c);
+
+                    cell.oncontextmenu = (function(row, col) {
+                        return function(e) {
+                            e.preventDefault();
+                            handleRightClick(row, col);
+                        };
+                    })(r, c);
+
+                    rowDiv.appendChild(cell);
+                }
+                
+                gameBoard.appendChild(rowDiv);
+            }
+        }
+
+        function handleClick(r, c) {
+            if (gameOver || revealed[r][c] || flagged[r][c]) return;
+            if (!gameStarted) {
+                gameStarted = true;
+                startTimer();
+            }
+
+            if (board[r][c] === 'M') {
+                gameOver = true;
+                revealAll();
+                showLoseModal();
+                return;
+            }
+
+            reveal(r, c);
+            renderBoard();
+
+            if (checkWin()) {
+                gameOver = true;
+                showWinModal();
+            }
+        }
+
+        function handleRightClick(r, c) {
+            if (gameOver || revealed[r][c]) return;
+            if (!gameStarted) {
+                gameStarted = true;
+                startTimer();
+            }
+
+            flagged[r][c] = !flagged[r][c];
+            flagsPlaced += flagged[r][c] ? 1 : -1;
+            flagsCountEl.textContent = flagsPlaced;
+            renderBoard();
+        }
+
+        function reveal(r, c) {
+            var config = LEVELS[currentLevel];
+            if (r < 0 || r >= config.rows || c < 0 || c >= config.cols || revealed[r][c] || flagged[r][c]) return;
+            revealed[r][c] = true;
+            if (board[r][c] === 0) {
+                for (var dr = -1; dr <= 1; dr++) {
+                    for (var dc = -1; dc <= 1; dc++) {
+                        reveal(r + dr, c + dc);
+                    }
+                }
+            }
+        }
+
+        function revealAll() {
+            var config = LEVELS[currentLevel];
+            for (var r = 0; r < config.rows; r++) {
+                for (var c = 0; c < config.cols; c++) {
+                    revealed[r][c] = true;
+                }
+            }
+            renderBoard();
+        }
+
+        function checkWin() {
+            var config = LEVELS[currentLevel];
+            for (var r = 0; r < config.rows; r++) {
+                for (var c = 0; c < config.cols; c++) {
+                    if (board[r][c] !== 'M' && !revealed[r][c]) return false;
+                }
+            }
+            return true;
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(function() {
+                timer++;
+                timerEl.textContent = timer;
+            }, 1000);
+        }
+
+        function showWinModal() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
+            var isNewRecord = checkAndUpdateRecord(timer);
+            winLevelEl.textContent = '第' + (currentLevel + 1) + '关';
+            winTimeEl.textContent = timer;
+
+            if (isNewRecord) {
+                newRecordEl.style.display = 'block';
+                bestRecordInfoEl.textContent = '这是你的最佳成绩！';
+            } else {
+                newRecordEl.style.display = 'none';
+                var best = loadRecord(currentLevel);
+                bestRecordInfoEl.textContent = '最高记录: ' + best + ' 秒';
+            }
+
+            winModal.classList.add('show');
+        }
+
+        function showLoseModal() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            loseLevelEl.textContent = '第' + (currentLevel + 1) + '关';
+            loseModal.classList.add('show');
+        }
+
+        function hideModals() {
+            winModal.classList.remove('show');
+            loseModal.classList.remove('show');
+        }
+
+        restartBtn.onclick = function() {
+            hideModals();
+            initGame(currentLevel);
+        };
+
+        hintBtn.onclick = function() {
+            if (gameOver || !gameStarted) return;
+            var config = LEVELS[currentLevel];
+            var safeCells = [];
+            for (var r = 0; r < config.rows; r++) {
+                for (var c = 0; c < config.cols; c++) {
+                    if (!revealed[r][c] && !flagged[r][c] && board[r][c] !== 'M') {
+                        safeCells.push([r, c]);
+                    }
+                }
+            }
+            if (safeCells.length > 0) {
+                var idx = Math.floor(Math.random() * safeCells.length);
+                var cellData = safeCells[idx];
+                var cell = gameBoard.querySelector('[data-row="' + cellData[0] + '"][data-col="' + cellData[1] + '"]');
+                if (cell) {
+                    cell.style.animation = 'pulse 0.5s ease-in-out 3';
+                    setTimeout(function() {
+                        cell.style.animation = '';
+                    }, 1500);
+                }
+            }
+        };
+
+        function goToLevel(level) {
+            if (level >= 0 && level < LEVELS.length) {
+                initGame(level);
+            }
+        }
+
+
+        function goNextLevel() {
+            if (currentLevel < LEVELS.length - 1) {
+                initGame(currentLevel + 1);
+            } else {
+                alert('🎉 恭喜！你已经通关所有关卡！');
+                initGame(0);
+            }
+        }
+
+        function goPrevLevel() {
+            if (currentLevel > 0) {
+                initGame(currentLevel - 1);
+            } else {
+                alert('这已经是第1关了！');
+            }
+        }
+
+        nextLevelBtn.onclick = function() {
+            hideModals();
+            goNextLevel();
+        };
+
+
+        nextLevelBtn2.onclick = function() {
+            goNextLevel();
+        };
+
+        prevLevelBtn.onclick = function() {
+            goPrevLevel();
+        };
+
+        retryBtn.onclick = function() {
+            hideModals();
+            initGame(currentLevel);
+        };
+
+        window.onresize = function() {
+            if (!gameOver) {
+                calculateCellSize();
+                renderBoard();
+            }
+        };
+
+        initGame(0);
+    </script>
+</body>
+</html>
